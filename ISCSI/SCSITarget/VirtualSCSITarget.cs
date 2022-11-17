@@ -119,6 +119,10 @@ namespace SCSI
                 uint allocationLength = command.TransferLength;
                 return ReadCapacity16(lun, allocationLength, out response);
             }
+            else if (command.OpCode == SCSIOpCodeName.ReadDiscInformation)
+            {
+                return ReadDiscInformation(lun, out response);
+            }
             else
             {
                 Log(Severity.Error, "Unsupported SCSI Command (0x{0})", command.OpCode.ToString("X"));
@@ -134,7 +138,9 @@ namespace SCSI
                 if ((int)command.PageCode == 0)
                 {
                     StandardInquiryData inquiryData = new StandardInquiryData();
-                    inquiryData.PeripheralDeviceType = 0; // Direct access block device
+                    inquiryData.PeripheralDeviceType = m_disks[lun].GetPeripheralDeviceType();
+                    if (inquiryData.PeripheralDeviceType == PeripheralDeviceType.CDRomDevice)
+                        inquiryData.RMB = true;
                     inquiryData.VendorIdentification = "TalAloni";
                     inquiryData.ProductIdentification = "SCSI Disk " + ((ushort)lun).ToString();
                     inquiryData.ProductRevisionLevel = "1.00";
@@ -378,6 +384,13 @@ namespace SCSI
                 response = FormatSenseData(SenseDataParameter.GetMediumErrorUnrecoverableReadErrorSenseData());
                 return SCSIStatusCodeName.CheckCondition;
             }
+        }
+
+        private SCSIStatusCodeName ReadDiscInformation(LUNStructure lun, out byte[] response)
+        {
+            ReadDiscInformationParameter parameter = new ReadDiscInformationParameter();
+            response = parameter.GetBytes();
+            return SCSIStatusCodeName.Good;
         }
 
         // Some initiators (i.e. EFI iSCSI DXE) will send 'Request Sense' upon connection (likely just to verify the medium is ready)

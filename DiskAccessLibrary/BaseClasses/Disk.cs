@@ -18,6 +18,11 @@ public abstract class Disk
         return ReadSectors(sectorIndex, 1);
     }
 
+    public virtual PeripheralDeviceType GetPeripheralDeviceType()
+    {
+        return PeripheralDeviceType.DirectAccessBlockDevice;
+    }
+
     public abstract int BytesPerSector
     {
         get;

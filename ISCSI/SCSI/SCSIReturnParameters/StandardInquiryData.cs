@@ -119,7 +119,7 @@ namespace SCSI
         {
             byte[] buffer = new byte[96];
             buffer[0] |= (byte)(PeripheralQualifier << 5);
-            buffer[0] |= (byte)(PeripheralQualifier & 0x1F);
+            buffer[0] |= (byte)((int)PeripheralDeviceType & 0x1F);
             if (RMB)
             {
                 buffer[1] |= 0x80;
