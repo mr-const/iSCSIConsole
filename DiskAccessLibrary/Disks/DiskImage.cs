@@ -78,6 +78,10 @@ namespace DiskAccessLibrary
             {
                 return new VirtualMachineDisk(path, isReadOnly);
             }
+            else if (path.EndsWith(".iso", StringComparison.InvariantCultureIgnoreCase))
+            {
+                return new OpticalDiskImage(path);
+            }
             else
             {
                 return new RawDiskImage(path, isReadOnly);

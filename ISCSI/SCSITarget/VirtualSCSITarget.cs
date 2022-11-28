@@ -123,6 +123,16 @@ namespace SCSI
             {
                 return ReadDiscInformation(lun, out response);
             }
+            else if (command.OpCode == SCSIOpCodeName.ReadToc)
+            {
+                uint allocationLength = command.TransferLength;
+                return ReadToc((ReadTocCommand)command, lun, allocationLength, out response);
+            }
+            else if (command.OpCode == SCSIOpCodeName.GetConfiguration)
+            {
+                uint allocationLength = command.TransferLength;
+                return GetConfiguration((GetConfigurationCommand)command, lun, allocationLength, out response);
+            }
             else
             {
                 Log(Severity.Error, "Unsupported SCSI Command (0x{0})", command.OpCode.ToString("X"));
@@ -390,6 +400,36 @@ namespace SCSI
         {
             ReadDiscInformationParameter parameter = new ReadDiscInformationParameter();
             response = parameter.GetBytes();
+            return SCSIStatusCodeName.Good;
+        }
+
+        private SCSIStatusCodeName ReadToc(ReadTocCommand command, LUNStructure lun, uint allocationLength, out byte[] response)
+        {
+            ReadTocParameter parameter = new ReadTocParameter(m_disks[lun], command.MSF, command.Format);
+            response = parameter.GetBytes();
+
+            if (response == null)
+                return SCSIStatusCodeName.CheckCondition;
+            // we must not return more bytes than ReportLUNs.AllocationLength
+            if (response.Length > allocationLength)
+            {
+                response = ByteReader.ReadBytes(response, 0, (int)allocationLength);
+            }
+            return SCSIStatusCodeName.Good;
+        }
+
+        private SCSIStatusCodeName GetConfiguration(GetConfigurationCommand command, LUNStructure lun, uint allocationLength, out byte[] response)
+        {
+            var parameter = new GetConfigurationParameter(m_disks[lun], command);
+            response = parameter.GetBytes();
+
+            if (response == null)
+                return SCSIStatusCodeName.CheckCondition;
+            // we must not return more bytes than ReportLUNs.AllocationLength
+            if (response.Length > allocationLength)
+            {
+                response = ByteReader.ReadBytes(response, 0, (int)allocationLength);
+            }
             return SCSIStatusCodeName.Good;
         }
 
